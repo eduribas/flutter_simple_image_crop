@@ -119,7 +119,7 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
                 }
 
                 ImageOptions options = decodeImageOptions(path);
-                if (options.isFlippedDimensions()) {
+                if (options.isRotated()) {
                     Matrix transformations = new Matrix();
                     transformations.postRotate(options.getDegrees());
                     Bitmap oldBitmap = srcBitmap;
