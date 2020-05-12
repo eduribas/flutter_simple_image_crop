@@ -146,7 +146,7 @@ class _SimpleCropRouteState extends State<SimpleCropRoute> {
           onPressed: () async {
             final crop = cropKey.currentState;
             final croppedFile =
-                await crop.cropCompleted(args['image'], pictureQuality: 600);
+                await crop.cropCompleted(args['image'], imageSize: 600);
             showImage(context, croppedFile);
           },
           tooltip: 'Increment',

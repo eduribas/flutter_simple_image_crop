@@ -48,9 +48,11 @@ class ImageCrop {
     File file,
     Rect area,
     double scale,
+    int quality,
   }) {
     assert(file != null);
     assert(area != null);
+    assert(quality != null);
     return _channel.invokeMethod('cropImage', {
       'path': file.path,
       'left': area.left,
@@ -58,6 +60,7 @@ class ImageCrop {
       'right': area.right,
       'bottom': area.bottom,
       'scale': scale ?? 1.0,
+      'quality': quality,
     }).then<File>((result) => File(result));
   }
 

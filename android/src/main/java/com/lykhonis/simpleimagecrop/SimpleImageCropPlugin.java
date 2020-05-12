@@ -64,8 +64,9 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
             double top = call.argument("top");
             double right = call.argument("right");
             double bottom = call.argument("bottom");
+            int quality = call.argument("quality");
             RectF area = new RectF((float) left, (float) top, (float) right, (float) bottom);
-            cropImage(path, area, (float) scale, result);
+            cropImage(path, area, (float) scale, quality, result);
         } else if ("sampleImage".equals(call.method)) {
             String path = call.argument("path");
             int maximumWidth = call.argument("maximumWidth");
@@ -92,7 +93,7 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
         activity.runOnUiThread(runnable);
     }
 
-    private void cropImage(final String path, final RectF area, final float scale, final Result result) {
+    private void cropImage(final String path, final RectF area, final float scale, final int quality, final Result result) {
         io(new Runnable() {
             @Override
             public void run() {
@@ -158,7 +159,7 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
 
                 try {
                     final File dstFile = createTemporaryImageFile();
-                    compressBitmap(dstBitmap, dstFile);
+                    compressBitmap(dstBitmap, dstFile, quality);
                     ui(new Runnable() {
                         @Override
                         public void run() {
@@ -223,7 +224,7 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
 
                 try {
                     final File dstFile = createTemporaryImageFile();
-                    compressBitmap(bitmap, dstFile);
+                    compressBitmap(bitmap, dstFile, 100);
                     copyExif(srcFile, dstFile);
                     ui(new Runnable() {
                         @Override
@@ -246,10 +247,10 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
     }
 
     @SuppressWarnings("TryFinallyCanBeTryWithResources")
-    private void compressBitmap(Bitmap bitmap, File file) throws IOException {
+    private void compressBitmap(Bitmap bitmap, File file, int quality) throws IOException {
         OutputStream outputStream = new FileOutputStream(file);
         try {
-            boolean compressed = bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            boolean compressed = bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             if (!compressed) {
                 throw new IOException("Failed to compress bitmap into JPEG");
             }

@@ -11,7 +11,7 @@ class ImgCrop extends StatefulWidget {
   final double maximumScale;
   final ImageErrorListener onImageError;
   final double chipRadius; // 裁剪半径
-  final String chipShape; // 裁剪区域形状
+  final String chipShape; // 裁剪区域形状  
   const ImgCrop(
       {Key key,
       this.image,
@@ -128,18 +128,26 @@ class ImgCropState extends State<ImgCrop> with TickerProviderStateMixin, Drag {
     _activate(1.0);
   }
 
-  Future<File> cropCompleted(File file, {int pictureQuality}) async {
+  Future<File> cropCompleted(File file, {int imageSize, int imageQuality = 100}) async {
     final options = await ImageCrop.getImageOptions(file: file);
+
     debugPrint('image width: ${options.width}, height: ${options.height}');
-    final sampleFile = await ImageCrop.sampleImage(
-      file: file,
-      preferredWidth: (pictureQuality / scale).round(),
-      preferredHeight: (pictureQuality / scale).round(),
-    );
+    
+    if (imageSize == null) {
+      imageSize = min(options.width, options.height);
+    }
+
+    // final sampleFile = await ImageCrop.sampleImage(
+    //   file: file,
+    //   preferredWidth: (imageSize / scale).round(),
+    //   preferredHeight: (imageSize / scale).round(),
+    // );
 
     final croppedFile = await ImageCrop.cropImage(
-      file: sampleFile,
+      // file: sampleFile,
+      file: file,
       area: area,
+      quality: imageQuality,
     );
     return croppedFile;
   }

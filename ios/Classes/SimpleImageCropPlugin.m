@@ -2,6 +2,7 @@
 
 #import <Photos/Photos.h>
 #import <MobileCoreServices/MobileCoreServices.h>
+#import <UIKit/UIKit.h>
 
 @implementation SimpleImageCropPlugin
 
@@ -21,10 +22,11 @@
         NSNumber* right = (NSNumber*)call.arguments[@"right"];
         NSNumber* bottom = (NSNumber*)call.arguments[@"bottom"];
         NSNumber* scale = (NSNumber*)call.arguments[@"scale"];
+        NSNumber* quality = (NSNumber*)call.arguments[@"quality"];
         CGRect area = CGRectMake(left.floatValue, top.floatValue,
                                  right.floatValue - left.floatValue,
                                  bottom.floatValue - top.floatValue);
-        [self cropImage:path area:area scale:scale result:result];
+        [self cropImage:path area:area scale:scale quality:quality result:result];
     } else if ([@"sampleImage" isEqualToString:call.method]) {
         NSString* path = (NSString*)call.arguments[@"path"];
         NSNumber* maximumWidth = (NSNumber*)call.arguments[@"maximumWidth"];
@@ -43,89 +45,166 @@
     }
 }
 
+// - (void)cropImage:(NSString*)path
+//              area:(CGRect)area
+//             scale:(NSNumber*)scale
+//           quality:(NSNumber*)quality
+//            result:(FlutterResult)result {
+//     [self execute:^{
+//         NSURL* url = [NSURL fileURLWithPath:path];
+
+//         CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef) url, NULL);
+        
+//         if (imageSource == NULL) {
+//             result([FlutterError errorWithCode:@"INVALID"
+//                                        message:@"Image source cannot be opened"
+//                                        details:nil]);
+//             return;
+//         }
+        
+//         CGImageRef image = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
+        
+//         if (image == NULL) {
+//             result([FlutterError errorWithCode:@"INVALID"
+//                                        message:@"Image cannot be opened"
+//                                        details:nil]);
+//             CFRelease(imageSource);
+//             return;
+//         }
+        
+//         size_t width = CGImageGetWidth(image);
+//         size_t height = CGImageGetHeight(image);
+//         size_t scaledWidth = (size_t) (width * area.size.width * scale.floatValue);
+//         size_t scaledHeight = (size_t) (height * area.size.height * scale.floatValue);
+//         size_t bitsPerComponent = CGImageGetBitsPerComponent(image);
+//         size_t bytesPerRow = CGImageGetBytesPerRow(image) / width * scaledWidth;
+//         CGImageAlphaInfo bitmapInfo = CGImageGetAlphaInfo(image);
+//         CGColorSpaceRef colorspace = CGImageGetColorSpace(image);
+        
+//         CGImageRef croppedImage = CGImageCreateWithImageInRect(image,
+//                                                                CGRectMake(width * area.origin.x,
+//                                                                           height * area.origin.y,
+//                                                                           width * area.size.width,
+//                                                                           height * area.size.height));
+        
+//         CFRelease(image);
+//         CFRelease(imageSource);
+        
+//         if (scale.floatValue != 1.0) {
+//             CGContextRef context = CGBitmapContextCreate(NULL,
+//                                                          scaledWidth,
+//                                                          scaledHeight,
+//                                                          bitsPerComponent,
+//                                                          bytesPerRow,
+//                                                          colorspace,
+//                                                          bitmapInfo);
+            
+//             if (context == NULL) {
+//                 result([FlutterError errorWithCode:@"INVALID"
+//                                            message:@"Image cannot be scaled"
+//                                            details:nil]);
+//                 CFRelease(croppedImage);
+//                 return;
+//             }
+            
+//             CGRect rect = CGContextGetClipBoundingBox(context);
+//             CGContextDrawImage(context, rect, croppedImage);
+            
+//             CGImageRef scaledImage = CGBitmapContextCreateImage(context);
+            
+//             CGContextRelease(context);
+//             CFRelease(croppedImage);
+            
+//             croppedImage = scaledImage;
+//         }
+        
+//         NSURL* croppedUrl = [self createTemporaryImageUrl];
+//         bool saved = [self saveImage:croppedImage url:croppedUrl quality:quality];
+//         CFRelease(croppedImage);
+        
+//         if (saved) {
+//             result(croppedUrl.path);
+//         } else {
+//             result([FlutterError errorWithCode:@"INVALID"
+//                                        message:@"Cropped image cannot be saved"
+//                                        details:nil]);
+//         }
+//     }];
+// }
+
 - (void)cropImage:(NSString*)path
              area:(CGRect)area
             scale:(NSNumber*)scale
+          quality:(NSNumber*)quality
            result:(FlutterResult)result {
+
     [self execute:^{
-        NSURL* url = [NSURL fileURLWithPath:path];
-        CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef) url, NULL);
-        
-        if (imageSource == NULL) {
+
+        UIImage* inputImage = [UIImage imageWithContentsOfFile:path];
+
+        if (inputImage == NULL) {
             result([FlutterError errorWithCode:@"INVALID"
-                                       message:@"Image source cannot be opened"
+                                       message:@"Input image cannot be opened"
                                        details:nil]);
             return;
-        }
-        
-        CGImageRef image = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
-        
-        if (image == NULL) {
-            result([FlutterError errorWithCode:@"INVALID"
-                                       message:@"Image cannot be opened"
-                                       details:nil]);
-            CFRelease(imageSource);
-            return;
-        }
-        
-        size_t width = CGImageGetWidth(image);
-        size_t height = CGImageGetHeight(image);
-        size_t scaledWidth = (size_t) (width * area.size.width * scale.floatValue);
-        size_t scaledHeight = (size_t) (height * area.size.height * scale.floatValue);
-        size_t bitsPerComponent = CGImageGetBitsPerComponent(image);
-        size_t bytesPerRow = CGImageGetBytesPerRow(image) / width * scaledWidth;
-        CGImageAlphaInfo bitmapInfo = CGImageGetAlphaInfo(image);
-        CGColorSpaceRef colorspace = CGImageGetColorSpace(image);
-        
-        CGImageRef croppedImage = CGImageCreateWithImageInRect(image,
-                                                               CGRectMake(width * area.origin.x,
-                                                                          height * area.origin.y,
-                                                                          width * area.size.width,
-                                                                          height * area.size.height));
-        
-        CFRelease(image);
-        CFRelease(imageSource);
-        
-        if (scale.floatValue != 1.0) {
-            CGContextRef context = CGBitmapContextCreate(NULL,
-                                                         scaledWidth,
-                                                         scaledHeight,
-                                                         bitsPerComponent,
-                                                         bytesPerRow,
-                                                         colorspace,
-                                                         bitmapInfo);
-            
-            if (context == NULL) {
-                result([FlutterError errorWithCode:@"INVALID"
-                                           message:@"Image cannot be scaled"
-                                           details:nil]);
-                CFRelease(croppedImage);
-                return;
-            }
-            
-            CGRect rect = CGContextGetClipBoundingBox(context);
-            CGContextDrawImage(context, rect, croppedImage);
-            
-            CGImageRef scaledImage = CGBitmapContextCreateImage(context);
-            
-            CGContextRelease(context);
-            CFRelease(croppedImage);
-            
-            croppedImage = scaledImage;
-        }
-        
-        NSURL* croppedUrl = [self createTemporaryImageUrl];
-        bool saved = [self saveImage:croppedImage url:croppedUrl];
-        CFRelease(croppedImage);
-        
-        if (saved) {
-            result(croppedUrl.path);
+        }                             
+
+        CGRect cropRect = CGRectMake(inputImage.size.width * area.origin.x,
+                                     inputImage.size.height * area.origin.y,
+                                     inputImage.size.width * area.size.width,
+                                     inputImage.size.height * area.size.height);
+
+        UIImage* resultImage = [self cuttingImageToRect:inputImage toRect:cropRect];
+
+        NSString* resultPath = [self createTemporaryImagePath];
+        CGFloat compressionQuality = [quality floatValue]/ 100;
+
+        bool success = [UIImageJPEGRepresentation(resultImage, compressionQuality) writeToFile:resultPath atomically:YES];  
+
+        if (success) {
+            result(resultPath);
         } else {
             result([FlutterError errorWithCode:@"INVALID"
                                        message:@"Cropped image cannot be saved"
                                        details:nil]);
         }
     }];
+}
+
+- (UIImage *)cuttingImageToRect:(UIImage *)image toRect:(CGRect)rect {
+    CGFloat (^rad)(CGFloat) = ^CGFloat(CGFloat deg) {
+        return deg / 180.0f * (CGFloat) M_PI;
+    };
+
+    // determine the orientation of the image and apply a transformation to the crop rectangle to shift it to the correct position
+    CGAffineTransform rectTransform;
+    switch (image.imageOrientation) {
+        case UIImageOrientationLeft:
+            rectTransform = CGAffineTransformTranslate(CGAffineTransformMakeRotation(rad(90)), 0, -image.size.height);
+            break;
+        case UIImageOrientationRight:
+            rectTransform = CGAffineTransformTranslate(CGAffineTransformMakeRotation(rad(-90)), -image.size.width, 0);
+            break;
+        case UIImageOrientationDown:
+            rectTransform = CGAffineTransformTranslate(CGAffineTransformMakeRotation(rad(-180)), -image.size.width, -image.size.height);
+            break;
+        default:
+            rectTransform = CGAffineTransformIdentity;
+    };
+
+    // adjust the transformation scale based on the image scale
+    rectTransform = CGAffineTransformScale(rectTransform, image.scale, image.scale);
+
+    // apply the transformation to the rect to create a new, shifted rect
+    CGRect transformedCropSquare = CGRectApplyAffineTransform(rect, rectTransform);
+    // use the rect to crop the image
+    CGImageRef imageRef = CGImageCreateWithImageInRect(image.CGImage, transformedCropSquare);
+    // create a new UIImage and set the scale and orientation appropriately
+    UIImage *result = [UIImage imageWithCGImage:imageRef scale:image.scale orientation:image.imageOrientation];
+    // memory cleanup
+    CGImageRelease(imageRef);
+
+    return result;
 }
 
 - (void)sampleImage:(NSString*)path
@@ -178,7 +257,7 @@
         }
 
         NSURL* sampleUrl = [self createTemporaryImageUrl];
-        bool saved = [self saveImage:sampleImage url:sampleUrl];
+        bool saved = [self saveImage:sampleImage url:sampleUrl quality:[NSNumber numberWithInt:100]];
         CFRelease(sampleImage);
         
         if (saved) {
@@ -231,9 +310,19 @@
     }];
 }
 
-- (bool)saveImage:(CGImageRef)image url:(NSURL*)url {
+- (bool)saveImage:(CGImageRef)image url:(NSURL*)url quality:(NSNumber*)quality {
+
+    float compression = [quality floatValue] / 100;
+    CFStringRef myKeys[1];
+    CFTypeRef   myValues[1];
+    CFDictionaryRef options = NULL;
+    myKeys[0] = kCGImageDestinationLossyCompressionQuality;
+    myValues[0] = CFNumberCreate(NULL, kCFNumberFloatType, &compression);
+    options = CFDictionaryCreate( NULL, (const void **)myKeys, (const void **)myValues, 1,
+                               &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+
     CGImageDestinationRef destination = CGImageDestinationCreateWithURL((CFURLRef) url, kUTTypeJPEG, 1, NULL);
-    CGImageDestinationAddImage(destination, image, NULL);
+    CGImageDestinationAddImage(destination, image, options);
     
     bool finilized = CGImageDestinationFinalize(destination);
     CFRelease(destination);
@@ -247,6 +336,14 @@
     NSString* sampleName = [[@"image_crop_" stringByAppendingString:guid] stringByAppendingString:@".jpg"];
     NSString* samplePath = [temproraryDirectory stringByAppendingPathComponent:sampleName];
     return [NSURL fileURLWithPath:samplePath];
+}
+
+- (NSString*)createTemporaryImagePath {
+    NSString* temproraryDirectory = NSTemporaryDirectory();
+    NSString* guid = [[NSProcessInfo processInfo] globallyUniqueString];
+    NSString* sampleName = [[@"image_crop_" stringByAppendingString:guid] stringByAppendingString:@".jpg"];
+    NSString* samplePath = [temproraryDirectory stringByAppendingPathComponent:sampleName];
+    return samplePath;
 }
 
 - (void)execute:(void (^)(void))block {
