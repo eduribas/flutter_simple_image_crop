@@ -162,7 +162,12 @@
         bool success = [UIImageJPEGRepresentation(resultImage, compressionQuality) writeToFile:resultPath atomically:YES];  
 
         if (success) {
-            result(resultPath);
+            // result(resultPath);
+            result(@{
+                @"path" : resultPath,
+                @"width" : @((int) roundf(resultImage.size.width)),
+                @"height" : @((int) roundf(resultImage.size.height))
+            });
         } else {
             result([FlutterError errorWithCode:@"INVALID"
                                        message:@"Cropped image cannot be saved"

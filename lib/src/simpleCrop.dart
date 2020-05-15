@@ -6,12 +6,18 @@ const _kCropHandleSize = 10.0;
 
 enum _CropAction { none, moving, scaling }
 
+class CropResult {
+  File file;
+  int width;
+  int height;
+}
+
 class ImgCrop extends StatefulWidget {
   final ImageProvider image;
   final double maximumScale;
   final ImageErrorListener onImageError;
   final double chipRadius; // 裁剪半径
-  final String chipShape; // 裁剪区域形状  
+  final String chipShape; // 裁剪区域形状
   const ImgCrop(
       {Key key,
       this.image,
@@ -128,11 +134,12 @@ class ImgCropState extends State<ImgCrop> with TickerProviderStateMixin, Drag {
     _activate(1.0);
   }
 
-  Future<File> cropCompleted(File file, {int imageSize, int imageQuality = 100}) async {
+  Future<CropResult> cropCompleted(File file,
+      {int imageSize, int imageQuality = 100}) async {
     final options = await ImageCrop.getImageOptions(file: file);
 
     debugPrint('image width: ${options.width}, height: ${options.height}');
-    
+
     if (imageSize == null) {
       imageSize = min(options.width, options.height);
     }
@@ -143,13 +150,13 @@ class ImgCropState extends State<ImgCrop> with TickerProviderStateMixin, Drag {
     //   preferredHeight: (imageSize / scale).round(),
     // );
 
-    final croppedFile = await ImageCrop.cropImage(
+    final cropResult = await ImageCrop.cropImage(
       // file: sampleFile,
       file: file,
       area: area,
       quality: imageQuality,
     );
-    return croppedFile;
+    return cropResult;
   }
 
   void _getImage({bool force: false}) {

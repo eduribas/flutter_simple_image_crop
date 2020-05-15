@@ -44,7 +44,7 @@ class ImageCrop {
     );
   }
 
-  static Future<File> cropImage({
+  static Future<CropResult> cropImage({
     File file,
     Rect area,
     double scale,
@@ -53,7 +53,7 @@ class ImageCrop {
     assert(file != null);
     assert(area != null);
     assert(quality != null);
-    return _channel.invokeMethod('cropImage', {
+    return _channel.invokeMapMethod('cropImage', {
       'path': file.path,
       'left': area.left,
       'top': area.top,
@@ -61,7 +61,10 @@ class ImageCrop {
       'bottom': area.bottom,
       'scale': scale ?? 1.0,
       'quality': quality,
-    }).then<File>((result) => File(result));
+    }).then<CropResult>((result) => CropResult()
+      ..file = File(result['path'])
+      ..width = result['width']
+      ..height = result['height']);
   }
 
   static Future<File> sampleImage({

@@ -132,7 +132,7 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
                 int width = (int) (options.getWidth() * area.width() * scale);
                 int height = (int) (options.getHeight() * area.height() * scale);
 
-                Bitmap dstBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                final Bitmap dstBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                 Canvas canvas = new Canvas(dstBitmap);
 
                 Paint paint = new Paint();
@@ -157,13 +157,17 @@ public final class SimpleImageCropPlugin implements MethodCallHandler, PluginReg
                 // options.getHeight() / 2f * area.height());
                 // canvas.drawBitmap(srcBitmap, transformations, paint);
 
-                try {
+                try {                    
                     final File dstFile = createTemporaryImageFile();
                     compressBitmap(dstBitmap, dstFile, quality);
                     ui(new Runnable() {
                         @Override
                         public void run() {
-                            result.success(dstFile.getAbsolutePath());
+                            Map<String, Object> cropResult = new HashMap<String, Object>();
+                            cropResult.put("path", dstFile.getAbsolutePath());
+                            cropResult.put("width", dstBitmap.getWidth());
+                            cropResult.put("height", dstBitmap.getHeight());
+                            result.success(cropResult);
                         }
                     });
                 } catch (final IOException e) {
